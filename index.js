@@ -4,17 +4,42 @@
 
 // Dependencies
 const http = require('http');
+const https = require('https');
 const url = require('url');
 const StringDecoder = require('string_decoder').StringDecoder;
 const config = require('./config');
+const fs = require('fs');
 
-// The server should respond to all requests with a string
-const server = http.createServer(function(req, res){
+// Instantiating the http server
+const httpServer = http.createServer(function(req, res){
+    unifiedServer(req, res);
+});
 
+// Start the http server 
+httpServer.listen(config.httpPort, function() {
+    console.log(`The server is listening on port ${config.httpPort}`);
+});
+
+// Instantiate the https server
+const httpsServerOptions = {
+    'key' : fs.readFileSync('./https/key.pem'),
+    'cert' : fs.readFileSync('./https/cert.pem')
+}
+const httpsServer = https.createServer(httpsServerOptions, function(req, res) {
+    unifiedServer(req, res);
+});
+
+// Start the https server
+httpsServer.listen(config.httpsPort, function (){
+    console.log(`The server is listening on port ${config.httpsPort}`);
+});
+
+// All the server logic for both the http and https server
+const unifiedServer = function (req, res) {
     // Get the url and parse it
     // True means parse the query string and send it to the query string module
     // url module has the ability to call the queryString module with this boolean flag
-     const parsedUrl = url.parse(req.url, true);
+    const parsedUrl = url.parse(req.url, true);
     
     // Get the path
     const path = parsedUrl.pathname;
@@ -81,12 +106,7 @@ const server = http.createServer(function(req, res){
         //console.log('Request received with these headers', headers);
         //console.log('Request is received on path: '+trimmedPath+' with method: '+method+ ' with these query string parameters: '+ JSON.stringify(queryStringObject));
     });
-});
-
-// Start the server 
-server.listen(config.port, function() {
-    console.log(`The server is listening on port ${config.port} in ${config.envName} mode`);
-});
+};
 
 // Define the handlers
 const handlers = {};
